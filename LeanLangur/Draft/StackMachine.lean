@@ -69,8 +69,7 @@ example (a b: Nat) : ValidProgram 0 [Instr.push a, Instr.push b, Instr.add] := b
   grind
 
 example (a b c : Nat) : ValidProgram 0 [Instr.push a, Instr.push b, Instr.add, Instr.push c, Instr.add] := by
-  apply valid_program_push
-  grind
+  grind (ematch := 7)
 
 @[simp]
 theorem valid_program_of_push (k: Nat) (h : ValidProgram k (Instr.push a :: p')) : ValidProgram (k + 1) p' := by

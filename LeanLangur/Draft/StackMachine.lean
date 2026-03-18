@@ -26,11 +26,7 @@ def eval? (p: Program) (s: Stack) : Option Stack :=
 /-- Validity of a program -/
 inductive ValidProgram : (initStackSize : Nat) → (p : Program) → Prop
   /-- The empty program is valid with an empty stack -/
-  | nil : ValidProgram 0 []
-  /-- If a program is valid with a certain stack size, then it is also valid with a larger stack size -/
-  | tail  {p : Program} :
-      ValidProgram n p →
-      ValidProgram (n + 1) p
+  | nil : ValidProgram n []
   /-- If the first instruction is a push and the rest of the program is valid  with stack size `s + 1` then the program is valid with stack size `s` -/
   | push  {p : Program} :
       ValidProgram (n + 1) p →
@@ -45,11 +41,7 @@ inductive ValidProgram : (initStackSize : Nat) → (p : Program) → Prop
       ValidProgram (n + 1) (Instr.pop :: p)
 
 @[simp, grind .]
-theorem valid_program_nil : ValidProgram 0 [] := ValidProgram.nil
-
-@[simp, grind .]
-theorem valid_program_tail (k: Nat) (h : ValidProgram k p') : ValidProgram (k + 1) p' := by
-  apply ValidProgram.tail h
+theorem valid_program_nil : ValidProgram n [] := ValidProgram.nil
 
 @[simp, grind .]
 theorem valid_program_push (n: Nat) (h : ValidProgram (n + 1) p') :
@@ -61,7 +53,7 @@ theorem valid_program_add (k: Nat) (h : ValidProgram (k + 1) p') :
   ValidProgram.add h
 
 @[simp]
-theorem valid_program_pop (k: Nat) (h : ValidProgram n p') :
+theorem valid_program_pop (h : ValidProgram n p') :
   ValidProgram (n + 1) (Instr.pop :: p') :=
   ValidProgram.pop h
 
@@ -74,10 +66,7 @@ example (a b c : Nat) : ValidProgram 0 [Instr.push a, Instr.push b, Instr.add, I
 @[simp]
 theorem valid_program_of_push (k: Nat) (h : ValidProgram k (Instr.push a :: p')) : ValidProgram (k + 1) p' := by
   cases h
-  · rename_i k h₂
-    have ih := valid_program_of_push k h₂
-    exact .tail ih
-  · assumption
+  assumption
 
 
 @[simp]
@@ -88,40 +77,22 @@ theorem invalid_program_add_zero: ¬ ValidProgram 0 (Instr.add :: p')  := by
 @[simp]
 theorem invalid_program_add_one: ¬ ValidProgram 1 (Instr.add :: p')  := by
   intro h
-  cases p:h
-  · rename_i h₂
-    simp at h₂
-
-
+  cases h
 
 @[simp]
-theorem valid_program_of_add (k: Nat) (h : ValidProgram (k + 2) (Instr.add :: p')) : ValidProgram (k + 1) p' := by
+theorem valid_program_of_add {k: Nat} (h : ValidProgram (k + 2) (Instr.add :: p')) : ValidProgram (k + 1) p' := by
   cases h
-  · rename_i h₂
-    match k with
-    | 0 =>
-      simp at h₂
-    | k' + 1 =>
-      have ih := valid_program_of_add k' h₂
-      exact .tail ih
-  · assumption
+  assumption
 
 @[simp]
 theorem invalid_program_pop_zero: ¬ ValidProgram 0 (Instr.pop :: p')  := by
   intro h
-  cases p:h
+  cases h
 
 @[simp]
-theorem valid_program_of_pop (k: Nat) (h : ValidProgram (k +1) (Instr.pop :: p')) : ValidProgram k p' := by
-  cases p:h
-  · rename_i h₂
-    cases k with
-    | zero =>
-      simp at h₂
-    | succ k' =>
-       have ih := valid_program_of_pop k' h₂
-       exact .tail ih
-  · assumption
+theorem valid_program_of_pop {k: Nat} (h : ValidProgram (k +1) (Instr.pop :: p')) : ValidProgram k p' := by
+  cases h
+  assumption
 
 def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
   match p with
@@ -131,16 +102,14 @@ def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
   | Instr.add :: p' =>
       match s with
       | x :: y :: zs =>
-        evaluate p' ((x + y) :: zs) (by
-          apply valid_program_of_add _ h)
+        evaluate p' ((x + y) :: zs) (valid_program_of_add h)
       | [x] => by
         simp at h
   | Instr.pop :: p' =>
       match s with
       | [] => by
         simp at h
-      | x :: ys => evaluate p' ys (by
-        apply valid_program_of_pop _ h)
+      | x :: ys => evaluate p' ys (valid_program_of_pop h)
 
 
 end stack_machine

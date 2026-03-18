@@ -34,21 +34,49 @@ inductive ValidProgram : (initStackSize : Nat) → (p : Program) → Prop
   /-- If the first instruction is a push and the rest of the program is valid  with stack size `s + 1` then the program is valid with stack size `s` -/
   | push  {p : Program} :
       ValidProgram (n + 1) p →
-      ValidProgram n (Instr.push n :: p)
+      ValidProgram n (Instr.push k :: p)
   /-- If the first instruction is an add and the rest of the program is valid with stack size `s + 2` then the program is valid with stack size `s + 1` -/
-  | add {s : Stack} {p : Program} :
+  | add {p : Program} :
       ValidProgram (n + 1) p →
       ValidProgram (n + 2) (Instr.add :: p)
   /-- If the first instruction is a pop and the rest of the program is valid with stack size `s` then the program is valid with stack size `s + 1` -/
-  | pop {s : Stack} {p : Program} :
+  | pop  {p : Program} :
       ValidProgram n p →
       ValidProgram (n + 1) (Instr.pop :: p)
 
+@[simp, grind .]
+theorem valid_program_nil : ValidProgram 0 [] := ValidProgram.nil
+
+@[simp, grind .]
+theorem valid_program_tail (k: Nat) (h : ValidProgram k p') : ValidProgram (k + 1) p' := by
+  apply ValidProgram.tail h
+
+@[simp, grind .]
+theorem valid_program_push (n: Nat) (h : ValidProgram (n + 1) p') :
+    ValidProgram n (Instr.push k :: p') :=    ValidProgram.push h
+
+@[simp, grind .]
+theorem valid_program_add (k: Nat) (h : ValidProgram (k + 1) p') :
+  ValidProgram (k + 2) (Instr.add :: p') :=
+  ValidProgram.add h
+
 @[simp]
-theorem valid_program_push (k: Nat) (h : ValidProgram k (Instr.push a :: p')) : ValidProgram (k + 1) p' := by
+theorem valid_program_pop (k: Nat) (h : ValidProgram n p') :
+  ValidProgram (n + 1) (Instr.pop :: p') :=
+  ValidProgram.pop h
+
+example (a b: Nat) : ValidProgram 0 [Instr.push a, Instr.push b, Instr.add] := by
+  grind
+
+example (a b c : Nat) : ValidProgram 0 [Instr.push a, Instr.push b, Instr.add, Instr.push c, Instr.add] := by
+  apply valid_program_push
+  grind
+
+@[simp]
+theorem valid_program_of_push (k: Nat) (h : ValidProgram k (Instr.push a :: p')) : ValidProgram (k + 1) p' := by
   cases h
   · rename_i k h₂
-    have ih := valid_program_push k h₂
+    have ih := valid_program_of_push k h₂
     exact .tail ih
   · assumption
 
@@ -68,14 +96,14 @@ theorem invalid_program_add_one: ¬ ValidProgram 1 (Instr.add :: p')  := by
 
 
 @[simp]
-theorem valid_program_add (k: Nat) (h : ValidProgram (k + 2) (Instr.add :: p')) : ValidProgram (k + 1) p' := by
+theorem valid_program_of_add (k: Nat) (h : ValidProgram (k + 2) (Instr.add :: p')) : ValidProgram (k + 1) p' := by
   cases h
   · rename_i h₂
     match k with
     | 0 =>
       simp at h₂
     | k' + 1 =>
-      have ih := valid_program_add k' h₂
+      have ih := valid_program_of_add k' h₂
       exact .tail ih
   · assumption
 
@@ -85,14 +113,14 @@ theorem invalid_program_pop_zero: ¬ ValidProgram 0 (Instr.pop :: p')  := by
   cases p:h
 
 @[simp]
-theorem valid_program_pop (k: Nat) (h : ValidProgram (k +1) (Instr.pop :: p')) : ValidProgram k p' := by
+theorem valid_program_of_pop (k: Nat) (h : ValidProgram (k +1) (Instr.pop :: p')) : ValidProgram k p' := by
   cases p:h
   · rename_i h₂
     cases k with
     | zero =>
       simp at h₂
     | succ k' =>
-       have ih := valid_program_pop k' h₂
+       have ih := valid_program_of_pop k' h₂
        exact .tail ih
   · assumption
 
@@ -100,12 +128,12 @@ def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
   match p with
   | [] => s
   | Instr.push n :: p' =>
-      evaluate p' (n :: s) (valid_program_push s.length h)
+      evaluate p' (n :: s) (valid_program_of_push s.length h)
   | Instr.add :: p' =>
       match s with
       | x :: y :: zs =>
         evaluate p' ((x + y) :: zs) (by
-          apply valid_program_add _ h)
+          apply valid_program_of_add _ h)
       | [x] => by
         simp at h
   | Instr.pop :: p' =>
@@ -113,7 +141,7 @@ def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
       | [] => by
         simp at h
       | x :: ys => evaluate p' ys (by
-        apply valid_program_pop _ h)
+        apply valid_program_of_pop _ h)
 
 
 end stack_machine

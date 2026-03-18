@@ -2,13 +2,24 @@ namespace stack_machine
 
 inductive Instr
   | push (n : Nat)
-  | add
   | pop
+  | add
   deriving Repr
 
 abbrev Stack := List Nat
 
 abbrev Program := List Instr
+
+def eval! (p: Program) (s: Stack) : Stack :=
+  match p with
+  | [] => s
+  | Instr.push n :: p' => eval! p' (n :: s)
+  | Instr.pop :: p' =>
+      eval! p' s.tail!
+  | Instr.add :: p' =>
+      let x := s.head!
+      let y := s.tail!.head!
+      eval! p' ((x + y) :: s.tail!.tail!)
 
 def eval? (p: Program) (s: Stack) : Option Stack :=
   match p with
@@ -25,20 +36,20 @@ def eval? (p: Program) (s: Stack) : Option Stack :=
 
 /-- Validity of a program -/
 inductive ValidProgram : (initStackSize : Nat) → (p : Program) → Prop
-  /-- The empty program is valid with an empty stack -/
+  /-- The empty program is valid with any stack -/
   | nil : ValidProgram n []
   /-- If the first instruction is a push and the rest of the program is valid  with stack size `s + 1` then the program is valid with stack size `s` -/
   | push  {p : Program} :
       ValidProgram (n + 1) p →
       ValidProgram n (Instr.push k :: p)
-  /-- If the first instruction is an add and the rest of the program is valid with stack size `s + 2` then the program is valid with stack size `s + 1` -/
-  | add {p : Program} :
-      ValidProgram (n + 1) p →
-      ValidProgram (n + 2) (Instr.add :: p)
   /-- If the first instruction is a pop and the rest of the program is valid with stack size `s` then the program is valid with stack size `s + 1` -/
   | pop  {p : Program} :
       ValidProgram n p →
       ValidProgram (n + 1) (Instr.pop :: p)
+  /-- If the first instruction is an add and the rest of the program is valid with stack size `s + 2` then the program is valid with stack size `s + 1` -/
+  | add {p : Program} :
+      ValidProgram (n + 1) p →
+      ValidProgram (n + 2) (Instr.add :: p)
 
 @[simp, grind .]
 theorem valid_program_nil : ValidProgram n [] := ValidProgram.nil
@@ -64,7 +75,7 @@ example (a b c : Nat) : ValidProgram 0 [Instr.push a, Instr.push b, Instr.add, I
   grind (ematch := 7)
 
 @[simp]
-theorem valid_program_of_push (k: Nat) (h : ValidProgram k (Instr.push a :: p')) : ValidProgram (k + 1) p' := by
+theorem valid_program_of_push {k: Nat} (h : ValidProgram k (Instr.push a :: p')) : ValidProgram (k + 1) p' := by
   cases h
   assumption
 
@@ -98,7 +109,7 @@ def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
   match p with
   | [] => s
   | Instr.push n :: p' =>
-      evaluate p' (n :: s) (valid_program_of_push s.length h)
+      evaluate p' (n :: s) (valid_program_of_push h)
   | Instr.add :: p' =>
       match s with
       | x :: y :: zs =>
@@ -111,5 +122,46 @@ def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
         simp at h
       | x :: ys => evaluate p' ys (valid_program_of_pop h)
 
+
+theorem valid_iff_eval?_some (p: Program) (s: Stack) : ValidProgram s.length p ↔ (eval? p s) ≠ none := by
+  constructor
+  · intro h
+    match p with
+    | [] => grind [eval?]
+    | Instr.push n :: p' =>
+        have h' : ValidProgram (s.length + 1) p' := valid_program_of_push h
+        have ih := (valid_iff_eval?_some p' (n ::s))
+        grind [eval?]
+    | Instr.add :: p' =>
+        match s with
+        | x :: y :: zs =>
+           have h' := valid_program_of_add h
+           have ih := (valid_iff_eval?_some p' ((x + y) :: zs))
+           grind [eval?]
+    | Instr.pop :: p' =>
+        match s with
+        | x :: ys =>
+            have h' : ValidProgram ys.length p' := valid_program_of_pop h
+            have ih := (valid_iff_eval?_some p' ys)
+            grind [eval?]
+  · intro h
+    match p with
+    | [] => grind [eval?]
+    | Instr.push n :: p' =>
+        have ih := (valid_iff_eval?_some p' (n ::s))
+        grind [eval?]
+    | Instr.add :: p' =>
+        match s with
+        | x :: y :: zs =>
+           have ih := (valid_iff_eval?_some p' ((x + y) :: zs))
+           grind [eval?]
+    | Instr.pop :: p' =>
+        match s with
+        | x :: ys =>
+            have ih := (valid_iff_eval?_some p' ys)
+            simp
+            apply valid_program_pop
+            simp [eval?] at h
+            grind
 
 end stack_machine

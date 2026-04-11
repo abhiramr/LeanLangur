@@ -35,9 +35,9 @@ partial def naiveQuickSort : List α → List α
 def quickSort : List α → List α
   | [] => []
   | pivot :: l =>
-    have hs : (smaller pivot l).length < (pivot :: l).length := by
+    have hs : (List.filter (fun x ↦ decide (x ≤ pivot)) l).length ≤ l.length := by
       grind
-    have hl : (larger pivot l).length < (pivot :: l).length := by
+    have hl : (List.filter (fun x ↦ decide (pivot < x)) l).length ≤ l.length := by
       grind
     (quickSort (smaller pivot l)) ++ pivot :: (quickSort (larger pivot l))
 termination_by l => l.length
@@ -64,9 +64,9 @@ theorem mem_iff_mem_quickSort (l: List α)(x : α) :
   cases l with
   | nil => simp
   | cons pivot l =>
-    have : (smaller pivot l).length < (pivot :: l).length := by
+    have hs : (List.filter (fun x ↦ decide (x ≤ pivot)) l).length ≤ l.length := by
       grind
-    have : (larger pivot l).length < (pivot :: l).length := by
+    have hl : (List.filter (fun x ↦ decide (pivot < x)) l).length ≤ l.length := by
       grind
     have ih₁ := mem_iff_mem_quickSort (smaller pivot l)
     have ih₂ := mem_iff_mem_quickSort (larger pivot l)
@@ -142,10 +142,10 @@ theorem quickSort_sorted (l : List α) : Sorted (quickSort l) := by
     apply Sorted.nil
   | cons pivot l =>
     rw [quickSort_cons]
-    have : (smaller pivot l).length < (pivot :: l).length :=
-        by grind
-    have : (larger pivot l).length < (pivot :: l).length :=
-        by grind
+    have hs : (List.filter (fun x ↦ decide (x ≤ pivot)) l).length ≤ l.length := by
+      grind
+    have hl : (List.filter (fun x ↦ decide (pivot < x)) l).length ≤ l.length := by
+      grind
     have h_small :=
       quickSort_sorted (smaller pivot l)
     have h_large :=

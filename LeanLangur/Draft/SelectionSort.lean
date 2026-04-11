@@ -35,12 +35,13 @@ theorem smallest_le_all (l: List α) (h: l ≠ []) (x: α) :
 /-!
 We now implement Selection Sort using smallest.
 -/
-@[grind .]
 def selectionSort : List α → List α
   | [] => []
   | x :: ys =>
     let s := smallest (x :: ys) (by simp)
     have : ((x :: ys).erase s).length < (x :: ys).length := by grind
+    have : ((x :: ys).erase (smallest (x :: ys) (by simp))).length ≤ ys.length := by
+      grind
     s :: selectionSort ((x :: ys).erase s)
 termination_by l => l.length
 
@@ -55,23 +56,23 @@ theorem mem_iff_mem_selectionSort (l: List α)(x : α) :
     if p:x = smallest (head :: tail) (by simp) then
       grind
     else
-      have : ((head ::tail).erase (smallest (head :: tail) (by simp))).length < (head :: tail).length := by grind
+      have : ((head ::tail).erase (smallest (head :: tail) (by simp))).length ≤  tail.length := by grind
       have ih := mem_iff_mem_selectionSort ((head ::tail).erase (smallest (head :: tail) (by simp))) x
       grind
   · match l with
-  | [] => grind
+  | [] => grind [selectionSort]
   | head :: tail =>
-    have : ((head ::tail).erase (smallest (head :: tail) (by simp))).length < (head :: tail).length := by grind
+    have : ((head ::tail).erase (smallest (head :: tail) (by simp))).length ≤ tail.length := by grind
     have ih := mem_iff_mem_selectionSort ((head ::tail).erase (smallest (head :: tail) (by simp))) x
-    grind
+    grind [selectionSort]
 termination_by l.length
 
 theorem selectionSort_sorted (l : List α) :
   Sorted (selectionSort l) := by
   match l with
-  | [] => grind [Sorted.nil]
+  | [] => grind [selectionSort, Sorted.nil]
   | head :: tail =>
-    have : ((head ::tail).erase (smallest (head :: tail) (by simp))).length < (head :: tail).length := by grind
+    have : ((head ::tail).erase (smallest (head :: tail) (by simp))).length ≤ tail.length := by grind
     have ih := selectionSort_sorted ((head ::tail).erase (smallest (head :: tail) (by simp)))
-    grind
+    grind [selectionSort]
 termination_by l.length

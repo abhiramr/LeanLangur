@@ -39,7 +39,7 @@ def selectionSort : List α → List α
   | [] => []
   | x :: ys =>
     let s := smallest (x :: ys) (by simp)
-    have : ((x :: ys).erase s).length < (x :: ys).length := by grind
+    have : ((x :: ys).erase s).length ≤ ys.length := by grind
     s :: selectionSort ((x :: ys).erase s)
 termination_by l => l.length
 

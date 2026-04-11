@@ -1,3 +1,4 @@
+import LeanLangur.Basic
 namespace stack_machine
 
 inductive Instr
@@ -36,17 +37,17 @@ def eval? (p: Program) (s: Stack) : Option Stack :=
 
 /-- Validity of a program -/
 inductive ValidProgram : (initStackSize : Nat) → (p : Program) → Prop
-  /-- The empty program is valid with any stack -/
+  /-- The empty program is valid with any initial stack -/
   | nil : ValidProgram n []
-  /-- If the first instruction is a push and the rest of the program is valid  with stack size `s + 1` then the program is valid with stack size `s` -/
+  /-- If the first instruction is a push and the rest of the program is valid  with stack size `s + 1` then the program is valid with initial stack size `s` -/
   | push  {p : Program} :
       ValidProgram (n + 1) p →
       ValidProgram n (Instr.push k :: p)
-  /-- If the first instruction is a pop and the rest of the program is valid with stack size `s` then the program is valid with stack size `s + 1` -/
+  /-- If the first instruction is a pop and the rest of the program is valid with stack size `s` then the program is valid with initial stack size `s + 1` -/
   | pop  {p : Program} :
       ValidProgram n p →
       ValidProgram (n + 1) (Instr.pop :: p)
-  /-- If the first instruction is an add and the rest of the program is valid with stack size `s + 2` then the program is valid with stack size `s + 1` -/
+  /-- If the first instruction is an add and the rest of the program is valid with stack size `s + 2` then the program is valid with initial stack size `s + 1` -/
   | add {p : Program} :
       ValidProgram (n + 1) p →
       ValidProgram (n + 2) (Instr.add :: p)

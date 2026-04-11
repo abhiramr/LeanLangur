@@ -1,5 +1,6 @@
 import Mathlib.Data.List.Basic
 import Mathlib.Tactic
+import LeanLangur.Basic
 
 /-!
 ## Quicksort Algorithm (Pivot from Head)
@@ -35,10 +36,6 @@ partial def naiveQuickSort : List α → List α
 def quickSort : List α → List α
   | [] => []
   | pivot :: l =>
-    have hs : (List.filter (fun x ↦ decide (x ≤ pivot)) l).length ≤ l.length := by
-      grind
-    have hl : (List.filter (fun x ↦ decide (pivot < x)) l).length ≤ l.length := by
-      grind
     (quickSort (smaller pivot l)) ++ pivot :: (quickSort (larger pivot l))
 termination_by l => l.length
 
@@ -61,17 +58,7 @@ theorem mem_iff_below_or_above_pivot (pivot : α)
 @[grind =_]
 theorem mem_iff_mem_quickSort (l: List α)(x : α) :
     x ∈ l ↔ x ∈ quickSort l := by
-  cases l with
-  | nil => simp
-  | cons pivot l =>
-    have hs : (List.filter (fun x ↦ decide (x ≤ pivot)) l).length ≤ l.length := by
-      grind
-    have hl : (List.filter (fun x ↦ decide (pivot < x)) l).length ≤ l.length := by
-      grind
-    have ih₁ := mem_iff_mem_quickSort (smaller pivot l)
-    have ih₂ := mem_iff_mem_quickSort (larger pivot l)
-    grind
-termination_by l.length
+  fun_induction quickSort <;> grind
 
 section Count
 /-!
@@ -142,10 +129,6 @@ theorem quickSort_sorted (l : List α) : Sorted (quickSort l) := by
     apply Sorted.nil
   | cons pivot l =>
     rw [quickSort_cons]
-    have hs : (List.filter (fun x ↦ decide (x ≤ pivot)) l).length ≤ l.length := by
-      grind
-    have hl : (List.filter (fun x ↦ decide (pivot < x)) l).length ≤ l.length := by
-      grind
     have h_small :=
       quickSort_sorted (smaller pivot l)
     have h_large :=

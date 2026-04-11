@@ -22,25 +22,10 @@ theorem largestNat_mem : ∀ (l : List Nat), l ≠ [] → largestNat l ∈ l := 
   intro l
   fun_induction largestNat <;> grind
 
--- | [], h => by
---   simp at h
--- | [x], h => by simp [largestNat]
--- | x :: y :: xs, h =>
---     by
---       have ih :=
---         largestNat_mem (y :: xs) (by simp)
---       grind [largestNat]
 
 theorem largestNat_ge_all (l: List Nat) (h: l ≠ []) (x: Nat) :
   x ∈ l → x ≤ largestNat l := by
   fun_induction largestNat <;> grind
-  -- match l with
-  -- | [y] =>
-  --   grind [largestNat]
-  -- | y :: z :: xs =>
-  --   have ih :=
-  --     largestNat_ge_all (z :: xs) (by simp) x
-  --   grind [largestNat]
 
 variable {α : Type}[LinearOrder α]
 

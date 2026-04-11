@@ -10,3 +10,6 @@ def hello := "world"
 #eval "Hello, " ++ hello -- evaluates to "Hello, world"
 
 #check hello -- checks the type of `hello`, which is `String`
+
+
+macro_rules | `(tactic | decreasing_tactic) => `(tactic | grind)

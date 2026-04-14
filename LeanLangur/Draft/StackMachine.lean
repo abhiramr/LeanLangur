@@ -36,6 +36,7 @@ def eval? (p: Program) (s: Stack) : Option Stack :=
       | _ => none
 
 /-- Validity of a program -/
+@[grind cases]
 inductive ValidProgram : (initStackSize : Nat) → (p : Program) → Prop
   /-- The empty program is valid with any initial stack -/
   | nil : ValidProgram n []
@@ -88,37 +89,35 @@ theorem invalid_program_add_zero: ¬ ValidProgram 0 (Instr.add :: p')  := by
 
 @[simp]
 theorem invalid_program_add_one: ¬ ValidProgram 1 (Instr.add :: p')  := by
-  intro h
-  cases h
+  grind
+  -- intro h
+  -- cases h
 
 @[simp]
 theorem valid_program_of_add {k: Nat} (h : ValidProgram (k + 2) (Instr.add :: p')) : ValidProgram (k + 1) p' := by
-  cases h
-  assumption
+  grind
 
 @[simp]
 theorem invalid_program_pop_zero: ¬ ValidProgram 0 (Instr.pop :: p')  := by
-  intro h
-  cases h
+  grind
 
 @[simp]
 theorem valid_program_of_pop {k: Nat} (h : ValidProgram (k +1) (Instr.pop :: p')) : ValidProgram k p' := by
-  cases h
-  assumption
+  grind
 
-def evaluate (p: Program) (s: Stack) (h: ValidProgram s.length p) : Stack :=
+def evaluate (p: Program) (initStack: Stack) (h: ValidProgram initStack.length p) : Stack :=
   match p with
-  | [] => s
+  | [] => initStack
   | Instr.push n :: p' =>
-      evaluate p' (n :: s) (valid_program_of_push h)
+      evaluate p' (n :: initStack) (valid_program_of_push h)
   | Instr.add :: p' =>
-      match s with
+      match initStack with
       | x :: y :: zs =>
         evaluate p' ((x + y) :: zs) (valid_program_of_add h)
       | [x] => by
         simp at h
   | Instr.pop :: p' =>
-      match s with
+      match initStack with
       | [] => by
         simp at h
       | x :: ys => evaluate p' ys (valid_program_of_pop h)

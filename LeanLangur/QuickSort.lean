@@ -83,6 +83,7 @@ theorem count_eq_count_quickSort (l : List α)
 end Count
 
 section Sorted
+@[grind cases]
 inductive Sorted : List α → Prop
   | nil : Sorted []
   | singleton (x : α) : Sorted [x]

@@ -60,28 +60,53 @@ inductive SafePath : FilePath → Prop where
 | pub (p : FilePath) : SafePath ("public" / p)
 | data (p : FilePath) : SafePath ("data" / p)
 
+@[grind .]
+theorem pubSafe (p : FilePath) : SafePath ("public" / p) := by
+    apply SafePath.pub
+
+@[grind .]
+theorem dataSafe (p : FilePath) : SafePath ("data" / p) := by
+    apply SafePath.data
+
 inductive SafeProg  : {α : Type} →  FileM α → Prop where
 | pureSafe (a : α) (h : SafeVal a) : SafeProg (FileM.pure a)
 | readSafe (p : FilePath) (h : SafePath p) : SafeProg  (FileM.read p)
 | writeSafe (p : FilePath) (h : SafePath p) (s : String) (h2 : SafeVal s) : SafeProg (FileM.write p s)
-| bindSafe
+| flatMapSafe
     (x : FileM α)
     (h : SafeProg x)
     (f : α → FileM β)
-    (h2 : ∀a, SafeVal a → SafeProg  (f a)) : SafeProg  (x >>= f)
+    (h2 : ∀a, SafeVal a → SafeProg  (f a)) : SafeProg  (.flatMap f x)
+
+@[grind .]
+theorem pureSafe (a : α) (h : SafeVal a) : SafeProg (FileM.pure a) := by
+    apply SafeProg.pureSafe
+    assumption
+
+@[grind .]
+theorem readSafe (p : FilePath) (h : SafePath p) : SafeProg  (FileM.read p) := by
+    apply SafeProg.readSafe
+    assumption
+
+@[grind .]
+theorem writeSafe (p : FilePath) (h : SafePath p) (s : String) (h2 : SafeVal s) : SafeProg (FileM.write p s) := by
+    apply SafeProg.writeSafe <;> assumption
+
+@[grind .]
+theorem flatMapSafe
+    (x : FileM α)
+    (h : SafeProg x)
+    (f : α → FileM β)
+    (h2 : ∀a, SafeVal a → SafeProg  (f a)) : SafeProg  (.flatMap f x) := by
+    apply SafeProg.flatMapSafe <;> assumption
+
 
 def pubToData (p : FilePath) : FileM Unit := do
     let contents ← FileM.read ("public" / p)
     FileM.write ("data" / p) contents
 
 theorem safe_pubToData (p : FilePath) : SafeProg (pubToData p) := by
-    apply SafeProg.bindSafe
-    . apply SafeProg.readSafe
-      apply SafePath.pub
-    . intro contents hContents
-      apply SafeProg.writeSafe
-      · apply SafePath.data
-      · assumption
+    apply SafeProg.flatMapSafe <;> grind
 
 def mergePubs (p1 p2 out : FilePath) : FileM Unit := do
     let c1 ← FileM.read ("public" / p1)
@@ -90,20 +115,15 @@ def mergePubs (p1 p2 out : FilePath) : FileM Unit := do
     FileM.write ("data" / out) merged
 
 theorem safe_mergePubs (p1 p2 out : FilePath) : SafeProg (mergePubs p1 p2 out) := by
-    apply SafeProg.bindSafe
+    apply SafeProg.flatMapSafe
     . apply SafeProg.readSafe
-      apply SafePath.pub
+      grind
     . intro c1 hC1
-      apply SafeProg.bindSafe
-      . apply SafeProg.readSafe
-        apply SafePath.pub
+      apply SafeProg.flatMapSafe
+      . grind
       . intro c2 hC2
         let merged := c1 ++ "\n" ++ c2
         have hMerged : SafeVal merged := blocks c1 c2 hC1 hC2
-        apply SafeProg.writeSafe
-        · apply SafePath.data
-        · assumption
+        grind
 
 end file_access
-
-#check bind_pure_comp

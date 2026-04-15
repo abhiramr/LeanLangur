@@ -17,7 +17,7 @@ def slowFib : Nat → Nat
   | 1 => 1
   | n + 2 => slowFib (n + 1) + slowFib n
 
-#eval slowFib 35
+#eval slowFib 32
 
 open Std
 

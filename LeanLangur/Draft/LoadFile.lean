@@ -6,13 +6,44 @@ open Lean Meta Elab Term PrettyPrinter Tactic Command Parser
 
 declare_syntax_cat filepath
 syntax str : filepath
-syntax filepath ppSpace "/" ppSpace str : filepath
+syntax filepath " / " str : filepath
 
 partial def filePath : TSyntax `filepath → System.FilePath
   | `(filepath| $s:str) => s.getString
   | `(filepath| $fs:filepath / $s) => (filePath fs / s.getString)
   | _ => System.FilePath.mk ""
 
+syntax (name:= loadFileTerm) "load_file%" (ppSpace filepath)? " ; " : term
+@[term_elab loadFileTerm] def loadFileTermImpl : TermElab := fun stx _ => do
+  match stx with
+  | `(load_file% $file:filepath ; ) =>
+    let filePath : System.FilePath := filePath file
+    let content ← IO.FS.readFile filePath
+    let stx' := Syntax.mkStrLit content
+    TryThis.addSuggestion stx stx'
+    return mkStrLit content
+  | _ => throwUnsupportedSyntax
+
+-- def egFile := load_file% "README.md" ;
+
+-- #eval egFile
+
+syntax (name:= loadJsonTerm) "load_json%" (ppSpace filepath)? " ; " : term
+@[term_elab loadJsonTerm] def loadJsonTermImpl : TermElab := fun stx _ => do
+  match stx with
+  | `(load_json% $file:filepath ; ) =>
+    let filePath : System.FilePath := filePath file
+    let content ← IO.FS.readFile filePath
+    let .ok json := Json.parse content | throwError "Failed to parse JSON: {content}"
+    let rhs := "json% " ++ json.pretty
+    TryThis.addSuggestion stx rhs
+    let .ok termStx := runParserCategory (← getEnv) `term rhs | throwError "Failed to parse JSON syntax: {rhs}"
+    elabTerm termStx (mkConst ``Json)
+  | _ => throwUnsupportedSyntax
+
+-- def egJson := load_json% "lake-manifest.json" ;
+
+-- #eval egJson
 
 syntax (name:= loadFile) "#load_file" (ppSpace ident)? (ppSpace filepath)? : command
 @[command_elab loadFile] def loadFileImpl : CommandElab := fun stx  =>

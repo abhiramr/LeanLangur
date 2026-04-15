@@ -3,7 +3,7 @@
 import LeanLangur.Basic
 import LeanLangur.People
 import LeanLangur.QuickSort
-import LeanLangur.Exercises.LabelledTree
+import LeanLangur.Exercises.BinarySearchTree
 import LeanLangur.Largest
 import LeanLangur.Draft.SelectionSort
 import LeanLangur.PyFor

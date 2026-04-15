@@ -23,7 +23,7 @@ theorem largestNat_mem : ∀ (l : List Nat), l ≠ [] → largestNat l ∈ l := 
   fun_induction largestNat <;> grind
 
 
-theorem largestNat_ge_all (l: List Nat) (h: l ≠ []) (x: Nat) :
+theorem largestNat_ge_all (l: List Nat) (x: Nat) :
   x ∈ l → x ≤ largestNat l := by
   fun_induction largestNat <;> grind
 

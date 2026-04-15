@@ -1,7 +1,7 @@
 import Mathlib
 
 /-!
-## Exercise: Labelled Binary Search Tree
+## Exercise: Binary Search Tree
 
 In this exercise, we define a labelled binary search tree (BST) and use it to implement efficient membership checking with proofs of correctness.
 
@@ -34,15 +34,15 @@ These main goals are stated with `sorry` as placeholders. It will be helpful to 
 -/
 variable {α : Type}[LinearOrder α]
 
-inductive LabelledTree (α : Type) where
-  | leaf : α → LabelledTree α
-  | node : α → LabelledTree α → LabelledTree α → LabelledTree α
+inductive BinarySearchTree (α : Type) where
+  | leaf : α → BinarySearchTree α
+  | node : α → BinarySearchTree α → BinarySearchTree α → BinarySearchTree α
 deriving Repr, Inhabited
 
-open LabelledTree
+open BinarySearchTree
 
 @[grind .]
-def LabelledTree.addLabel (t: LabelledTree α) (label: α) : LabelledTree α :=
+def BinarySearchTree.addLabel (t: BinarySearchTree α) (label: α) : BinarySearchTree α :=
   match t with
   | leaf x =>
     if label = x then leaf x
@@ -52,29 +52,29 @@ def LabelledTree.addLabel (t: LabelledTree α) (label: α) : LabelledTree α :=
       node label (leaf x) (leaf label)
   | node v l r =>
     if label ≤ v then
-      node v (LabelledTree.addLabel l label) r
+      node v (BinarySearchTree.addLabel l label) r
     else
-      node v l (LabelledTree.addLabel r label)
+      node v l (BinarySearchTree.addLabel r label)
 
 
 @[grind ., simp]
-def LabelledTree.mem {α : Type} : LabelledTree α → α → Prop
+def BinarySearchTree.mem {α : Type} : BinarySearchTree α → α → Prop
   | leaf x, y => x = y
-  | node _ l r, y => LabelledTree.mem l y ∨ LabelledTree.mem r y
+  | node _ l r, y => BinarySearchTree.mem l y ∨ BinarySearchTree.mem r y
 
 @[grind .]
-instance {α : Type} : Membership α (LabelledTree α) where
-  mem := LabelledTree.mem
+instance {α : Type} : Membership α (BinarySearchTree α) where
+  mem := BinarySearchTree.mem
 
 
 @[grind ., simp]
-def IsOrdered : LabelledTree α → Prop
+def IsOrdered : BinarySearchTree α → Prop
   | leaf _ => True
   | node v l r =>
     (∀ x ∈ l, x ≤ v) ∧ (∀ x ∈ r, v ≤ x) ∧ IsOrdered l ∧ IsOrdered r ∧ (v ∈ l ∨ v ∈ r)
 
 @[grind .]
-def fastCheckMem (label : α)(l: LabelledTree α) : Bool := match l with
+def fastCheckMem (label : α)(l: BinarySearchTree α) : Bool := match l with
   | leaf l => l == label
   | node l left right =>
     if l == label then true
@@ -85,17 +85,17 @@ def fastCheckMem (label : α)(l: LabelledTree α) : Bool := match l with
 /-! The above are definitions. Below are the main theorems about them. You will need to prove some lemmas along the way.
 -/
 
-theorem ordered_addLabel (t: LabelledTree α) (label: α)
+theorem ordered_addLabel (t: BinarySearchTree α) (label: α)
   (h: IsOrdered t) :
-    IsOrdered (LabelledTree.addLabel t label) := by
+    IsOrdered (BinarySearchTree.addLabel t label) := by
   sorry
 
 theorem fastCheckMem_correct (label : α)
-    (l: LabelledTree α)(h : IsOrdered l):
+    (l: BinarySearchTree α)(h : IsOrdered l):
     fastCheckMem label l = true ↔ label ∈ l := by
   sorry
 
-def buildBST : List α → LabelledTree α
+def buildBST : List α → BinarySearchTree α
   | _ => sorry
 
 theorem buildBST_ordered (labels : List α) :

@@ -2,6 +2,28 @@ import Lean
 -- import LeanAideCore.Kernel
 -- import LeanAideCore.Syntax.Kernel
 
+open IO FS System Lean
+
+def readme : IO String := readFile "README.md"
+
+#eval readme
+
+def lakeManifest : IO String := readFile "lake-manifest.json"
+
+#eval lakeManifest
+
+def lakeManifestJson : IO Json := do
+  let content ← lakeManifest
+  match Json.parse content with
+  | .ok json => return json
+  | .error err => IO.throwServerError s!"Failed to parse JSON: {err}"
+
+#eval lakeManifestJson
+
+def jsonEg := json% {"name": "LeanLangur", "version": "0.1.0", "dependencies": {"lean": "4.0.0"}}
+
+#eval jsonEg
+
 open Lean Meta Elab Term PrettyPrinter Tactic Command Parser
 
 declare_syntax_cat filepath

@@ -51,3 +51,19 @@ theorem largest_ge_all (l: List α) (h: l ≠ []) (x: α) :
     have ih :=
       largest_ge_all (z :: xs) (by simp) x
     grind
+
+def largest? (l: List α) : Option α :=
+  match l with
+  | [] => none
+  | x :: ys   =>
+    match largest? ys  with
+    | none => some x
+    | some m => some (max x m)
+
+theorem largest?_eq_some_largest (l: List α) (h: l ≠ []) :
+  largest? l = some (largest l h) := by
+  match l with
+  | [x] => grind [largest?]
+  | x :: y :: xs =>
+    have ih := largest?_eq_some_largest (y :: xs) (by simp)
+    grind [largest?]
